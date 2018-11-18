@@ -20,31 +20,10 @@
   retries: 10
   delay: 6
 
-- name: License the device
-  bigip_device_license:
-    license_key: "{{ bigip_onboard_license }}"
-    provider: "{{ provider }}"
-  delegate_to: localhost
-  when: bigip_onboard_license is defined and bigip_onboard_license != ''
-
 - name: Configure NTP server on BIG-IP
   bigip_device_ntp:
     provider: "{{ provider }}"
     ntp_servers: "{{ bigip_onboard_ntp_servers }}"
-  delegate_to: localhost
-
-- name: Configure BIG-IP hostname
-  bigip_hostname:
-    provider: "{{ provider }}"
-    hostname: "{{ bigip_onboard_hostname }}"
-  delegate_to: localhost
-  when: bigip_onboard_hostname != ""
-
-- name: Manage SSHD setting on BIG-IP
-  bigip_device_sshd:
-    provider: "{{ provider }}"
-    banner: enabled
-    banner_text: " {{ bigip_onboard_banner_text|default(omit) }}"
   delegate_to: localhost
 
 - name: Manage BIG-IP DNS settings
@@ -53,15 +32,6 @@
     name_servers: "{{ bigip_onboard_dns_servers|default(omit) }}"
     search: "{{ bigip_onboard_dns_search_domains|default(omit) }}"
     ip_version: "{{ bigip_onboard_dns_ip_version|default(omit) }}"
-  delegate_to: localhost
-
-- name: Provision BIG-IP with appropriate modules
-  bigip_provision:
-    provider: "{{ provider }}"
-    module: "{{ item.name }}"
-    level: "{{ item.level|default(omit) }}"
-  loop: "{{ bigip_onboard_module_provisioning }}"
-  when: bigip_onboard_module_provisioning != ""
   delegate_to: localhost
 
 - name: Configure VLANs on the BIG-IP
@@ -82,10 +52,4 @@
     vlan: "{{ item.vlan }}"
     allow_service: "{{ item.allow_service|default(omit) }}"
   loop: "{{ bigip_onboard_selfip_information }}"
-  delegate_to: localhost
-
-- name: Disable the setup utility
-  bigip_sys_global:
-    provider: "{{ provider }}"
-    gui_setup: no
   delegate_to: localhost
