@@ -1,0 +1,55 @@
+---
+
+- name: Setup provider
+  set_fact:
+    provider:
+      server: "{{ provider_server }}"
+      server_port: "{{ provider_server_port }}"
+      user: "{{ provider_user }}"
+      password: "{{ provider_password }}"
+      validate_certs: "{{ provider_validate_certs }}"
+      transport: "{{ provider_transport }}"
+
+- name: Wait for BIG-IP to be available
+  bigip_wait:
+    timeout: 300
+    provider: "{{ provider }}"
+  delegate_to: localhost
+  register: status
+  until: status is success
+  retries: 10
+  delay: 6
+
+- name: Configure NTP server on BIG-IP
+  bigip_device_ntp:
+    provider: "{{ provider }}"
+    ntp_servers: "{{ bigip_onboard_ntp_servers }}"
+  delegate_to: localhost
+
+- name: Manage BIG-IP DNS settings
+  bigip_device_dns:
+    provider: "{{ provider }}"
+    name_servers: "{{ bigip_onboard_dns_servers|default(omit) }}"
+    search: "{{ bigip_onboard_dns_search_domains|default(omit) }}"
+    ip_version: "{{ bigip_onboard_dns_ip_version|default(omit) }}"
+  delegate_to: localhost
+
+- name: Configure VLANs on the BIG-IP
+  bigip_vlan:
+    provider: "{{ provider }}"
+    name: "{{ item.name }}"
+    tag: "{{ item.tag|default(omit) }}"
+    tagged_interface: "{{ item.interface|default(omit) }}"
+  loop: "{{ bigip_onboard_vlan_information }}"
+  delegate_to: localhost
+
+- name: Configure SELF-IPs on the BIG-IP
+  bigip_selfip:
+    provider: "{{ provider }}"
+    name: "{{ item.name }}"
+    address: "{{ item.address }}"
+    netmask: "{{ item.netmask }}"
+    vlan: "{{ item.vlan }}"
+    allow_service: "{{ item.allow_service|default(omit) }}"
+  loop: "{{ bigip_onboard_selfip_information }}"
+  delegate_to: localhost
